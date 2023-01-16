@@ -116,7 +116,7 @@ class ELF:
     section headers"""
 
     def __init__(self, e_class=ELFCLASS.ELFCLASS32, e_data=ELFDATA.ELFDATA2MSB,
-            e_type=ET.ET_EXEC, e_machine=EM.EM_NONE):
+            e_type=ET.ET_EXEC, e_machine=EM.EM_NONE, e_entry=0):
         if e_class is None and e_data is None and e_type is None and e_machine \
                 is None:
             # create empty object
@@ -141,7 +141,7 @@ class ELF:
         #  \details Provides possibility to make any modification to ELF file,
         #  including setting fields to invalid values.
         self.Elf = cls(Ehdr=hdr(e_ident=Elf32_e_ident(EI_CLASS=e_class, EI_DATA=e_data),
-                e_type=e_type, e_machine=e_machine, little=self.little))
+                e_type=e_type, e_machine=e_machine, little=self.little, e_entry=e_entry))
 
         # create empty section entry
         undef_section = Elf32_Shdr(little=self.little)
@@ -308,10 +308,10 @@ class ELF:
     #  created if does not exists)
     #  \param sec_name Name of the section to append
     #  \returns ID of newly added section
-    def append_section(self, sec_name, sec_data, sec_addr):
+    def append_section(self, sec_name, sec_data, sec_addr, sh_flags=0, sh_addralign=0):
         return self._append_section(sec_name, sec_data, sec_addr,
-                sh_type=SHT.SHT_PROGBITS, sh_flags=0, sh_link=0, sh_info=0,
-                sh_addralign=1, sh_entsize=0)
+                sh_type=SHT.SHT_PROGBITS, sh_flags=sh_flags, sh_link=0, sh_info=0,
+                sh_addralign=sh_addralign, sh_entsize=0)
 
     ## Add new special section to ELF file
     #  \details This function allows to add one of the special, structured
