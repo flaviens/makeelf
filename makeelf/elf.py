@@ -162,10 +162,10 @@ class ELF:
         # adjust e_shstrndx
         self.Elf.Ehdr.e_shstrndx = len(self.Elf.Shdr_table) - 1
 
-        # add dummy program header
-        if e_type in [ET.ET_EXEC, ET.ET_DYN]:
-            self._append_segment(ptype=PT.PT_LOAD, vaddr=0, paddr=0,
-                    file_size=0, mem_size=0, flags=int(PF.PF_R)|int(PF.PF_X))
+        # # add dummy program header
+        # if e_type in [ET.ET_EXEC, ET.ET_DYN]:
+        #     self._append_segment(ptype=PT.PT_LOAD, vaddr=0, paddr=0,
+        #             file_size=0, mem_size=0, flags=int(PF.PF_R)|int(PF.PF_X))
 
     def __str__(self):
         return str(self.Elf)
@@ -349,7 +349,7 @@ class ELF:
     #  \param addr virtual address at which segment will be loaded
     #  \param mem_size size of segment after loading into memory
     #  \returns ID of newly added segment
-    def append_segment(self, sec_id, addr=None, mem_size=-1, flags='rwx'):
+    def append_segment(self, sec_id, addr=None, mem_size=-1, flags='rwx', p_align=1, p_offset=None):
         if self.Elf.Ehdr.e_type not in [ET.ET_EXEC, ET.ET_DYN]:
             raise Exception('ELF type is not executable neither shared (e_type'\
                     ' is %s)' % self.hdr.e_type)
@@ -360,6 +360,8 @@ class ELF:
         # set address to this of section linked if default
         if addr is None:
             addr = Shdr.sh_addr
+        if p_offset is None:
+            p_offset = Shdr.sh_offset
 
         # set memory size to this of section linked if default
         if mem_size == -1:
@@ -376,14 +378,14 @@ class ELF:
             p_flags |= PF.PF_X
 
         # call internal adder interface
-        return self._append_segment(ptype=PT.PT_LOAD, vaddr=addr, paddr=0,
-                file_size=Shdr.sh_size, mem_size=mem_size, flags=p_flags)
+        return self._append_segment(ptype=PT.PT_LOAD, vaddr=addr, paddr=addr,
+                file_size=Shdr.sh_size, mem_size=mem_size, flags=p_flags, p_align=p_align, p_offset=p_offset)
 
-    def _append_segment(self, ptype, vaddr, paddr, file_size, mem_size, flags=0):
+    def _append_segment(self, ptype, vaddr, paddr, file_size, mem_size, flags=0, p_align=1, p_offset=0):
         # create instance of Phdr
-        Phdr = Elf32_Phdr(p_type=ptype, p_offset=0, p_vaddr=vaddr,
+        Phdr = Elf32_Phdr(p_type=ptype, p_offset=p_offset, p_vaddr=vaddr,
                 p_paddr=paddr, p_filesz=file_size, p_memsz=mem_size,
-                p_flags=flags, p_align=1, little=self.little)
+                p_flags=flags, p_align=p_align, little=self.little)
 
         # add Phdr to elf object
         ret = len(self.Elf.Phdr_table)
